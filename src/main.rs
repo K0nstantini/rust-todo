@@ -12,7 +12,7 @@ mod tree;
 
 struct Model<'a> {
     _root: Box<dyn GenericNodeTask + 'a>,
-    random_task: Box<dyn GenericNodeTask + 'a>,
+    current_task: Box<dyn GenericNodeTask + 'a>,
 }
 
 impl<'a> Model<'a> {
@@ -32,12 +32,12 @@ impl<'a> Model<'a> {
         };
 
 
-        let (root, random_task) = match type_task {
+        let (root, current_task) = match type_task {
             TypeTasks::Goal => Self::root_and_random::<Goal>(),
             TypeTasks::Single => Self::root_and_random::<SingleTask>()
         }?;
 
-        let model = Model { _root: root, random_task };
+        let model = Model { _root: root, current_task };
         Ok(model)
     }
 }
@@ -49,13 +49,12 @@ fn main() -> Result<()> {
     loop {
         let mut line = String::new();
         io::stdin().read_line(&mut line)?;
-        let line = line.trim();
 
-        match line.to_lowercase().as_str() {
+        match line.trim().to_lowercase().as_str() {
             a if a.starts_with("get") => {
                 model = match Model::new(a) {
                     Ok(m) => {
-                        println!("{}", m.random_task.name());
+                        println!("{}", m.current_task.name());
                         Some(m)
                     }
                     Err(e) => {
@@ -65,10 +64,13 @@ fn main() -> Result<()> {
                 }
             }
             "done" => match model {
-                Some(_) => todo!(),
+                Some(ref m) => println!("Task '{}' completed and deleted", m.current_task.name()),
                 None => println!("No current task")
             }
-            "exit" => break,
+            "exit" => match model {
+                Some(ref m) => println!("Task '{}' is running", m.current_task.name()),
+                None => break
+            },
             _ => println!("Unknown command")
         }
     }

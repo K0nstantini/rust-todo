@@ -30,19 +30,21 @@ impl<T: Task> GenericNodeTask for NodeTaskRef<T> {
         let children = self.children.borrow();
         if self.in_order {
             let first_child = Rc::clone(children.first().unwrap());
-            return get_random_from(first_child);
+            // return get_random_from(first_child);
+            return first_child.get_random();
         }
 
         let mut rng = rand::thread_rng();
         let children = self.children.borrow();
         let max_range = children.iter().map(|c| c.weight).sum();
         let mut rand_weight = rng.gen_range(1..=max_range);
+        // println!("Range {:?} for {:?}. Rand: {}", 1..=max_range, self.name, rand_weight);
 
         for child in children.iter() {
             if rand_weight <= child.weight {
-                return get_random_from(Rc::clone(child));
+                return child.get_random();
             }
-            rand_weight -= rand_weight;
+            rand_weight -= child.weight;
         }
         unreachable!();
     }
@@ -60,30 +62,6 @@ fn name_rec<T: Task>(node: NodeTaskRef<T>, name: &str) -> String {
         }
         None => name.to_string()
     }
-}
-
-fn get_random_from<T: Task>(node: NodeTaskRef<T>) -> NodeTaskRef<T> {
-    if node.children.borrow().is_empty() {
-        return node;
-    }
-    let children = node.children.borrow();
-    if node.in_order {
-        let first_child = Rc::clone(children.first().unwrap());
-        return get_random_from(first_child);
-    }
-
-    let mut rng = rand::thread_rng();
-    let children = node.children.borrow();
-    let max_range = children.iter().map(|c| c.weight).sum();
-    let mut rand_weight = rng.gen_range(1..=max_range);
-
-    for child in children.iter() {
-        if rand_weight <= child.weight {
-            return get_random_from(Rc::clone(child));
-        }
-        rand_weight -= rand_weight;
-    }
-    unreachable!();
 }
 
 #[derive(Debug)]
