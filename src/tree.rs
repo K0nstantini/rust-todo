@@ -30,7 +30,6 @@ impl<T: Task> GenericNodeTask for NodeTaskRef<T> {
         let children = self.children.borrow();
         if self.in_order {
             let first_child = Rc::clone(children.first().unwrap());
-            // return get_random_from(first_child);
             return first_child.get_random();
         }
 
@@ -38,7 +37,6 @@ impl<T: Task> GenericNodeTask for NodeTaskRef<T> {
         let children = self.children.borrow();
         let max_range = children.iter().map(|c| c.weight).sum();
         let mut rand_weight = rng.gen_range(1..=max_range);
-        // println!("Range {:?} for {:?}. Rand: {}", 1..=max_range, self.name, rand_weight);
 
         for child in children.iter() {
             if rand_weight <= child.weight {
