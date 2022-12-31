@@ -15,6 +15,8 @@ pub const fn default_one() -> u32 { 1 }
 #[serde(rename_all = "camelCase")]
 pub struct TaskJson {
     name: String,
+    #[serde(default)]
+    time: u32,
     #[serde(default = "default_one")]
     weight: u32,
     #[serde(default)]
@@ -65,6 +67,7 @@ impl Into<Task> for &TaskJson {
     fn into(self) -> Task {
         Task {
             name: self.name.clone(),
+            time: self.time,
             weight: self.weight,
             in_order: self.in_order,
             parent: RefCell::new(Default::default()),
