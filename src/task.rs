@@ -69,18 +69,18 @@ impl Task {
         match self.parent.borrow().upgrade() {
             Some(p) => {
                 let parent_name = Rc::clone(&p).get_path(&p.name);
-                format!("{}/{}", parent_name, name)
+                format!("{parent_name}/{name}")
             }
             None => name.to_string()
         }
     }
 }
 
-impl Into<RandomData> for &Child {
-    fn into(self) -> RandomData {
+impl From<&Child> for RandomData {
+    fn from(value: &Child) -> Self {
         RandomData {
-            weight: self.weight,
-            time: Rc::clone(self).get_time(),
+            weight: value.weight,
+            time: Rc::clone(value).get_time(),
         }
     }
 }

@@ -44,14 +44,14 @@ impl TaskJson {
     }
 }
 
-impl Into<TaskRef> for TaskJson {
-    fn into(self) -> TaskRef {
-        let parent: Task = (&self).into();
+impl From<TaskJson> for TaskRef {
+    fn from(value: TaskJson) -> Self {
+        let parent: Task = (&value).into();
         let parent_ref = Rc::new(parent);
         {
             let mut my_children = parent_ref.children.borrow_mut();
 
-            for child in self.tasks {
+            for child in value.tasks {
                 let child_ref = child.into();
                 my_children.push(Rc::clone(&child_ref));
 
@@ -63,13 +63,13 @@ impl Into<TaskRef> for TaskJson {
     }
 }
 
-impl Into<Task> for &TaskJson {
-    fn into(self) -> Task {
+impl From<&TaskJson> for Task {
+    fn from(value: &TaskJson) -> Self {
         Task {
-            name: self.name.clone(),
-            time: self.time,
-            weight: self.weight,
-            in_order: self.in_order,
+            name: value.name.clone(),
+            time: value.time,
+            weight: value.weight,
+            in_order: value.in_order,
             parent: RefCell::new(Default::default()),
             children: RefCell::new(vec![]),
         }
