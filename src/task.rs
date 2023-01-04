@@ -5,7 +5,7 @@ use anyhow::Result;
 
 use crate::load::TaskJson;
 use crate::random;
-use crate::random::RandomItem;
+use crate::random::RandomData;
 
 pub type TaskRef = Rc<Task>;
 type WeakTaskRef = Weak<Task>;
@@ -13,6 +13,7 @@ type Parent = RefCell<WeakTaskRef>;
 pub type Children = RefCell<Vec<Child>>;
 pub type Child = TaskRef;
 
+#[derive(Debug)]
 pub struct Task {
     pub name: String,
     pub time: u32,
@@ -28,25 +29,36 @@ impl Task {
     }
 
     fn get_random(self: &TaskRef) -> TaskRef {
-        if self.children.borrow().is_empty() {
+        let children = self.children.borrow();
+        if children.is_empty() {
             return Rc::clone(self);
         }
 
-        let children = self.children.borrow();
         if self.in_order {
             let first_child = Rc::clone(children.first().unwrap());
             return first_child.get_random();
         }
 
-        let items = children
+        let items: Vec<_> = children
             .iter()
             .map(|ch| ch.into())
             .collect();
-        let random_item = random::get(items);
+        let random_item = random::get(&items);
         children
             .get(random_item)
             .unwrap()
             .get_random()
+    }
+
+    fn get_time(self: TaskRef) -> u32 {
+        let children = self.children.borrow();
+        if children.is_empty() {
+            return self.time;
+        }
+        self.time + children
+            .iter()
+            .map(|ch| Rc::clone(ch).get_time())
+            .sum::<u32>()
     }
 
     fn full_name(self: &TaskRef) -> String {
@@ -56,7 +68,7 @@ impl Task {
     fn get_path(self: TaskRef, name: &str) -> String {
         match self.parent.borrow().upgrade() {
             Some(p) => {
-                let parent_name = Self::get_path(Rc::clone(&p), &p.name);
+                let parent_name = Rc::clone(&p).get_path(&p.name);
                 format!("{}/{}", parent_name, name)
             }
             None => name.to_string()
@@ -64,9 +76,12 @@ impl Task {
     }
 }
 
-impl Into<RandomItem> for &Child {
-    fn into(self) -> RandomItem {
-        RandomItem { weight: self.weight, time: self.time }
+impl Into<RandomData> for &Child {
+    fn into(self) -> RandomData {
+        RandomData {
+            weight: self.weight,
+            time: Rc::clone(self).get_time(),
+        }
     }
 }
 
