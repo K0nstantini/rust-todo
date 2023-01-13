@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use rand::Rng;
 
-const OFFSET: f64 = 0.1;
+const OFFSET: f64 = 0.15;
 
 #[derive(Debug)]
 pub struct RandomData {
@@ -91,7 +91,8 @@ fn calc_weight(items: &[Rates]) -> impl Fn(&Rates) -> u32 {
             _ if loser_condition()(it) => loser_offset(it),
             _ => 0.0
         };
-        ((it.percent + offset) * 100.0).round() as u32
+        (((it.percent + offset) * 100.0).round() as u32)
+            .max(1) // leave ~1% chance
     }
 }
 
@@ -112,14 +113,12 @@ fn update_weights(items: &[RandomData]) -> Vec<u32> {
 }
 
 pub fn get(items: &[RandomData]) -> usize {
-    // items.iter().for_each(|it| println!("{:?}", it));
     let weights = update_weights(items);
-    // weights.iter().for_each(|it| println!("{}", it));
-    // println!();
     let all_weights = weights.iter().sum();
 
     let mut rng = rand::thread_rng();
     let mut rand_weight = rng.gen_range(1..=all_weights);
+    show_weights(&weights, rand_weight);
 
     for (i, weight) in weights.into_iter().enumerate() {
         if rand_weight <= weight {
@@ -130,9 +129,16 @@ pub fn get(items: &[RandomData]) -> usize {
     unreachable!();
 }
 
+fn show_weights(weights: &[u32], rand: u32) {
+    print!("{rand} from ");
+    weights.iter().for_each(|it| print!("{it} "));
+    println!();
+}
+
 #[test]
 fn update_weights_test() {
     let item = |weight, time| RandomData { weight, time };
+
     let items = [
         item(1, 100),
         item(1, 80),
@@ -158,10 +164,6 @@ fn update_weights_test() {
     ];
     let weights = update_weights(&items);
     assert_eq!(weights, [50, 25, 25]);
-
-    // update_weights(&items)
-    //     .iter()
-    //     .for_each(|it| println!("{it}"));
 }
 
 #[test]
