@@ -6,6 +6,7 @@ mod commands;
 mod task;
 mod load;
 mod random;
+mod args;
 
 fn main() -> Result<()> {
     run()

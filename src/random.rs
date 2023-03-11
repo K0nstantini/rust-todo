@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use rand::Rng;
 
-const OFFSET: f64 = 0.15;
+const OFFSET_RANGE: Range<u32> = 0..30;
 
 #[derive(Debug)]
 pub struct RandomData {
@@ -72,7 +72,9 @@ fn get_offset(items: &[Rates]) -> f64 {
     let winners_sum = sum(winner_condition());
     let losers_sum = sum(loser_condition());
 
-    OFFSET
+    let mut rng = rand::thread_rng();
+    let offset =  (rng.gen_range(OFFSET_RANGE) as f64) / 100.0;
+    offset
         .min(winners_sum)
         .min(1.0 - losers_sum)
 }
@@ -91,8 +93,8 @@ fn calc_weight(items: &[Rates]) -> impl Fn(&Rates) -> u32 {
             _ if loser_condition()(it) => loser_offset(it),
             _ => 0.0
         };
-        (((it.percent + offset) * 100.0).round() as u32)
-            .max(1) // leave ~1% chance
+        let percent = ((it.percent + offset) * 100.0).round() as u32;
+        if it.percent == 0.0 { 0 } else { percent.max(1) } // leave ~1% chance if original != 0
     }
 }
 
@@ -102,8 +104,6 @@ fn update_weights(items: &[RandomData]) -> Vec<u32> {
         items.iter().map(|i| i.weight).collect()
     } else {
         let rates = Rates::from_data(items);
-        // rates.iter().for_each(|it| println!("{:?}", it));
-        // println!();
         let calc_weights = calc_weight(&rates);
         rates
             .iter()

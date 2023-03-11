@@ -3,11 +3,11 @@ use std::fs;
 use std::rc::Rc;
 
 use anyhow::{bail, Result};
+use clap::Parser;
 use serde::Deserialize;
+use crate::args::Args;
 
 use crate::task::{Task, TaskRef};
-
-const TASKS_JSON: &str = "tasks.json";
 
 pub const fn default_one() -> u32 { 1 }
 
@@ -27,13 +27,14 @@ pub struct TaskJson {
 
 impl TaskJson {
     fn load() -> Result<Self> {
-        let data = match fs::read_to_string(TASKS_JSON) {
+        let file_name = Args::parse().path;
+        let data = match fs::read_to_string(&file_name) {
             Ok(s) => s,
-            Err(e) => bail!("Error reading file '{}': {}", TASKS_JSON, e)
+            Err(e) => bail!("Error reading file '{}': {}", file_name, e)
         };
         let task = match serde_json::from_str(&data) {
             Ok(t) => t,
-            Err(e) => bail!("Error parsing json '{}': {}", TASKS_JSON, e)
+            Err(e) => bail!("Error parsing json '{}': {}", file_name, e)
         };
         Ok(task)
     }
